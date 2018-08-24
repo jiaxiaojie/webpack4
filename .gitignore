@@ -1,0 +1,7 @@
+node_modules/
+.idea/
+api/
+stat.json
+src/assets/
+src/components/
+src/view/
