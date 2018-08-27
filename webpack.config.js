@@ -6,16 +6,15 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const VueLoaderPlugin = require('vue-loader/lib/plugin')
 const PurifyCssWebpack = require('purifycss-webpack')
 const glob = require('glob');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 module.exports = {
     entry: {
-        index: "./src/main.js", //入口文件，若不配置webpack4将自动查找src目录下的index.js文件
-        vendor: ['vue', 'vue-router', 'element-ui', 'lodash']
+        index: "./src/main.js" //入口文件，若不配置webpack4将自动查找src目录下的index.js文件
     },
     output: {
-        filename: "[name].[hash].bundle.js",//输出文件名，[name]表示入口文件js名
+        filename: "[name].bundle.js",//输出文件名，[name]表示入口文件js名
         path: path.join(__dirname, "dist"),//输出文件路径
-        publicPath: '/'
+        publicPath: "/"
     },
     resolve: {
         extensions: ['.js', '.vue', '.json', '.css', '.scss'],
@@ -40,9 +39,7 @@ module.exports = {
             {
                 test:/\.scss$/,
                 use: [
-                    {
-                        loader: "style-loader"
-                    },
+                    MiniCssExtractPlugin.loader,
                     {
                         loader: "css-loader"
                     },
@@ -99,10 +96,7 @@ module.exports = {
             // 'src/*.html' 表示扫描每个html的css
             paths:glob.sync(path.join(__dirname,'src/*.html'))
         }),
-        new BundleAnalyzerPlugin({
-            //  在默认浏览器中自动打开报告
-            openAnalyzer: true,
-        })
+        // new BundleAnalyzerPlugin()
     ],
     optimization: {
         splitChunks: {
