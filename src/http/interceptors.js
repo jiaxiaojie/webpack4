@@ -52,7 +52,7 @@ axios.interceptors.request.use(
                 config.data = changeToFormData(config.data);
             }
         }
-        showFullScreenLoading()
+        // showFullScreenLoading()
         return config;
     },  (error) => {
         // Do something with request error
