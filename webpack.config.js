@@ -2,17 +2,17 @@ const path = require("path")
 const webpack = require("webpack")
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
+const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
+const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 const VueLoaderPlugin = require('vue-loader/lib/plugin')
-const PurifyCssWebpack = require('purifycss-webpack')
-const glob = require('glob');
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 module.exports = {
     entry: {
         index: "./src/main.js" //入口文件，若不配置webpack4将自动查找src目录下的index.js文件
     },
     output: {
-        filename: "[name].bundle.js",//输出文件名，[name]表示入口文件js名
+        filename: "[hash:8].[name].bundle.js",//输出文件名，[name]表示入口文件js名
         path: path.join(__dirname, "dist"),//输出文件路径
         publicPath: "/"
     },
@@ -27,25 +27,26 @@ module.exports = {
     },
     module:{
         rules:[
-            {
-                test:/\.css$/,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    "css-loader"
-                ],
-                include: path.join(__dirname, 'src'), //限制范围，提高打包速度
-                exclude: /node_modules/
-            },
-            {
-                test:/\.scss$/,
+            {// loader sass and css
+                test: /\.(scss|css)$/,
                 use: [
                     MiniCssExtractPlugin.loader,
                     {
-                        loader: "css-loader"
+                        loader: 'css-loader?modules=false',
+                        options: {
+                            importLoaders: 1,
+                            minimize: true
+                        }
                     },
                     {
-                        loader: "sass-loader"
-                    }
+                        loader: 'postcss-loader',
+                        options: {
+                            config: {
+                                path: path.resolve(__dirname, './postcss.config.js')
+                            }
+                        },
+                    },
+                    "sass-loader"
                 ]
             },
             {
@@ -64,6 +65,7 @@ module.exports = {
                     {
                         loader:'url-loader',
                         options:{
+                            name: "[hash:8].[name].[ext]",
                             outputPath:'images/',
                             limit:500
                         }
@@ -73,7 +75,8 @@ module.exports = {
             },
             {
                 test: /\.(woff|eot|woff2|svg|ttf)\??.*$/,
-                loader: 'url-loader?limit=8192&name=[hash:8].[name].[ext]',
+                loader: 'url-loader?limit=8192&name=fonts/[hash:8].[name].[ext]'
+
             }
         ]
     },
@@ -86,38 +89,41 @@ module.exports = {
         new webpack.HotModuleReplacementPlugin(),
         new CleanWebpackPlugin(['dist']),
         new MiniCssExtractPlugin({
-            filename: "[name].css",
-            chunkFilename: "[id].css"
+            filename: "app.[name].css",
+            chunkFilename: "app.[hash:8].css"
         }),
         new VueLoaderPlugin(),
-        new PurifyCssWebpack({ //消除冗余代码
-            // 首先保证找路径不是异步的,所以这里用同步的方法
-            // path.join()也是path里面的方法,主要用来合并路径的
-            // 'src/*.html' 表示扫描每个html的css
-            paths:glob.sync(path.join(__dirname,'src/*.html'))
-        }),
-        // new BundleAnalyzerPlugin()
+        // new BundleAnalyzerPlugin({
+        //     openAnalyzer: false,
+        // })
     ],
     optimization: {
+        minimizer:[
+            new OptimizeCSSAssetsPlugin({}),
+            new UglifyJsPlugin({
+                cache: true,
+                parallel: true,
+                sourceMap: true
+            })
+        ],
         splitChunks: {
             cacheGroups: {
                 commons: {
-                    name: 'commons',
-                    chunks: 'initial',
+                    name: "commons",
+                    chunks: "initial",
                     minChunks: 2
                 },
                 styles: {
                     name: 'styles',
-                    test: /\.css$/,
-                    chunks: 'all',
-                    minChunks: 2,
+                    test: /\.(scss|css)$/,
+                    chunks: 'all',    // merge all the css chunk to one file
                     enforce: true
                 },
                 vendors: {
                     name:'vendor',
                     test: /[\\/]node_modules[\\/]/,
                     priority: 10,
-                    chunks: 'initial'
+                    chunks: 'all'
                 }
             }
         }
